@@ -132,6 +132,31 @@
   .hanger.used { transform: translateY(-6px); box-shadow: 0 0 0 2px var(--gold); }
   .hanger.dim { opacity: .35; }
   .closet-id { font-size: .62rem; color: var(--mute); margin-right: .3rem; }
+  .watch { font-family: var(--mono); font-weight: 700; font-size: .78rem; letter-spacing: .06em; background: var(--gold); color: var(--ink); border: none; padding: .55rem .9rem; cursor: pointer; }
+  .watch[aria-pressed="true"] { background: var(--paper); }
+  .watchbar { display: flex; justify-content: center; gap: .8rem; align-items: center; flex-wrap: wrap; }
+  #agents { display: none; }
+  #agents.on { display: block; }
+  .lanes { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); gap: .7rem; overflow-x: auto; padding-bottom: .6rem; }
+  .lane { background: #1f1c1a; border: 1px solid #4a433d; display: flex; flex-direction: column; max-height: 560px; min-height: 220px; animation: print .5s both; }
+  .lane header { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .55rem .7rem; border-bottom: 1px solid #4a433d; position: sticky; top: 0; background: #1f1c1a; }
+  .lane header b { font-size: .78rem; color: var(--paper); }
+  .lane .role { font-size: .6rem; color: #9d958a; letter-spacing: .1em; text-transform: uppercase; }
+  .dot { width: .55rem; height: .55rem; border-radius: 50%; background: var(--gold); flex: none; animation: pulse 1s infinite alternate; }
+  .lane.done .dot { background: #4fbf7f; animation: none; }
+  @keyframes pulse { to { opacity: .25; } }
+  .steps { overflow-y: auto; padding: .5rem .7rem .8rem; display: flex; flex-direction: column; gap: .45rem; font-size: .7rem; }
+  .st { border-left: 2px solid #5a524b; padding: .1rem 0 .1rem .5rem; color: #d8d0c4; white-space: pre-wrap; word-break: break-word; }
+  .st .k { display: block; font-size: .58rem; letter-spacing: .12em; color: #9d958a; margin-bottom: .1rem; }
+  .st.task { border-color: #9d958a; color: #b8afa3; }
+  .st.thought { border-color: #a98be0; color: #cbb8f0; font-style: italic; }
+  .st.call { border-color: var(--gold); color: #f1d79c; }
+  .st.result { border-color: #5a524b; color: #9d958a; max-height: 7.5em; overflow: hidden; cursor: pointer; }
+  .st.result.open { max-height: none; }
+  .st.say { border-color: #7ea6e0; color: #e6eefb; }
+  .st.done { border-color: #4fbf7f; color: #4fbf7f; }
+  .legend { font-size: .65rem; color: #9d958a; display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: .6rem; }
+  .legend i { font-style: normal; }
   details.work summary { cursor: pointer; font-size: .75rem; color: #cfc7bb; }
   details.work pre { margin-top: .6rem; font-size: .68rem; white-space: pre-wrap; color: #d8d0c4; max-height: 340px; overflow: auto; background: #1f1c1a; padding: .8rem; }
   .ctx-toggle { font-family: var(--mono); font-size: .72rem; background: none; border: 1px solid #6a625a; color: #cfc7bb; padding: .3rem .6rem; cursor: pointer; }
@@ -171,6 +196,14 @@
   <section id="question"></section>
 
   <section id="log"><div class="paper"><div class="center small">— AGENTS AT WORK —</div><hr class="rule" /><div id="lines"></div><div class="blink small" id="cursor"></div></div></section>
+
+  <div class="watchbar"><button class="watch" id="watch" aria-pressed="false">◉ WATCH EVERY AGENT THINK</button><span class="small" id="watch-note" style="color:#9d958a">one live column per agent, side by side</span></div>
+
+  <section id="agents">
+    <div class="section-title"><span>THE AGENTS, IN PARALLEL · EACH IN ITS OWN FRESH CONTEXT</span><span id="lane-count"></span></div>
+    <div class="legend"><i style="color:#b8afa3">■ task</i><i style="color:#cbb8f0">■ thinking</i><i style="color:#f1d79c">■ tool call</i><i style="color:#9d958a">■ result (click to expand)</i><i style="color:#e6eefb">■ says</i><i style="color:#4fbf7f">■ done</i></div>
+    <div class="lanes" id="lanes"><div class="small" style="color:#9d958a">Ask something above; each agent gets a column as it starts.</div></div>
+  </section>
 
   <section id="results"></section>
 
@@ -236,6 +269,54 @@ $("board").onclick = (ev) => {
 
 let source = null, original = "";
 
+const ROLE = { "Lead": "plans & fans out", "Closet Researcher": "searches the closet", "Trend Analyst": "checks Google Trends",
+               "Weather Scout": "checks Open-Meteo", "Writer": "prints the receipts" };
+const LABEL = { task: "TASK", thought: "THINKING", call: "CALLS", result: "GOT BACK", say: "SAYS", done: "DONE" };
+const lanes = {};
+
+$("watch").onclick = () => {
+  const on = !$("agents").classList.contains("on");
+  $("agents").classList.toggle("on", on);
+  $("watch").setAttribute("aria-pressed", on);
+  $("watch").textContent = on ? "◉ HIDE THE AGENTS" : "◉ WATCH EVERY AGENT THINK";
+  if (on) $("agents").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+function resetLanes() {
+  for (const k in lanes) delete lanes[k];
+  $("lanes").innerHTML = "";
+  $("lane-count").textContent = "";
+}
+
+function lane(agent) {
+  if (lanes[agent]) return lanes[agent];
+  if (!Object.keys(lanes).length) $("lanes").innerHTML = "";
+  const base = agent.replace(/ \d+$/, "");
+  const el = document.createElement("div");
+  el.className = "lane";
+  el.innerHTML = `<header><div><b>${esc(agent)}</b><div class="role">${esc(ROLE[base] || "")}</div></div><span class="dot"></span></header><div class="steps"></div>`;
+  $("lanes").appendChild(el);
+  lanes[agent] = el;
+  const n = Object.keys(lanes).length;
+  $("lane-count").textContent = `${n} agent${n > 1 ? "s" : ""}`;
+  return el;
+}
+
+function addStep(e) {
+  const el = lane(e.agent);
+  if (e.kind === "done") el.classList.add("done");
+  const box = el.querySelector(".steps");
+  const d = document.createElement("div");
+  d.className = "st " + e.kind;
+  let text = e.text;
+  if (e.kind === "call") text = `${e.tool}(${e.text})`;
+  if (e.kind === "result") { text = `${e.tool} → ${e.text}`; d.onclick = () => d.classList.toggle("open"); }
+  if (e.kind === "done") text = "finished";
+  d.innerHTML = `<span class="k">${LABEL[e.kind] || e.kind}</span>${esc(text)}`;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
 function logLine(agent, text) {
   const d = document.createElement("div");
   d.className = "line";
@@ -256,6 +337,7 @@ function run(q) {
   if (source) source.close();
   original = q;
   resetContext();
+  resetLanes();
   $("question").innerHTML = "";
   $("results").className = ""; $("results").innerHTML = ""; markCloset(new Set());
   $("log").className = "on"; $("lines").innerHTML = ""; $("cursor").textContent = "printing";
@@ -267,6 +349,7 @@ function run(q) {
     if (e.type === "start") runId = e.run_id;
     else if (e.type === "context" && runId) showContext(runId);
     else if (e.type === "activity") logLine(e.agent, e.text);
+    else if (e.type === "step") addStep(e);
     else if (e.type === "question") { finish(); ask(e.text); }
     else if (e.type === "error") { finish(); $("question").innerHTML = `<div class="paper"><div class="center"><b>PRINTER JAM</b></div><hr class="rule"/><div class="small">${esc(e.message)}</div></div>`; }
     else if (e.type === "done") { finish(); render(e); }

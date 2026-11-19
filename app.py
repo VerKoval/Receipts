@@ -33,7 +33,10 @@ set_tracing_disabled(True)
 # Gemini on Vertex through LiteLLM. On Cloud Run the service account authenticates; no API key.
 MODEL = LitellmModel(model="vertex_ai/gemini-3.5-flash", api_key="unused")
 RESEARCHER_MODEL = LitellmModel(model="vertex_ai/gemini-3.5-flash-lite", api_key="unused")
-SETTINGS = ModelSettings(extra_args={"vertex_location": "global", "timeout": 90, "num_retries": 2})
+# reasoning_effort turns on Gemini's thinking; LiteLLM hands back the thought summary, which the
+# page shows in each agent's column. "low" keeps it fast.
+SETTINGS = ModelSettings(extra_args={"vertex_location": "global", "timeout": 90, "num_retries": 2,
+                                     "reasoning_effort": "low"})
 
 MAX_RESEARCHERS = 7  # across all rounds; keeps every answer well inside the grader's 5 minutes
 
@@ -380,20 +383,60 @@ app = FastAPI()
 add_context_panel(app, sessions)
 
 
+def _short(value, limit: int = 700) -> str:
+    text = value if isinstance(value, str) else json.dumps(value, default=str)
+    return text if len(text) <= limit else text[:limit] + " ..."
+
+
 class CollectingHooks(PanelHooks):
-    """PanelHooks plus a record of every tool call, so /chat can show the agent's work."""
+    """PanelHooks plus two things: a record of every tool call for /chat, and a "step" event for
+    every move an agent makes (its task, its thoughts, each call, each result, its report), so
+    the page can draw one live column per agent."""
 
     def __init__(self, contexts, emit, calls: list[dict]):
         super().__init__(contexts, emit)
         self.calls = calls
+        self.briefed: set[str] = set()
+
+    def step(self, agent: str, kind: str, text: str, tool: str = "") -> None:
+        self.emit({"type": "step", "agent": agent, "kind": kind, "tool": tool, "text": text})
+
+    async def on_llm_start(self, context, agent, system_prompt, input_items):
+        await super().on_llm_start(context, agent, system_prompt, input_items)
+        if agent.name not in self.briefed:  # the first time this agent runs: show its task
+            self.briefed.add(agent.name)
+            asks = [i for i in input_items if isinstance(i, dict) and i.get("role") == "user"]
+            self.step(agent.name, "task", _short(asks[-1]["content"] if asks else "", 400))
+
+    async def on_llm_end(self, context, agent, response):
+        await super().on_llm_end(context, agent, response)
+        for item in response.output:
+            kind = getattr(item, "type", None)
+            if kind == "reasoning":
+                summary = " ".join(getattr(s, "text", "") for s in (getattr(item, "summary", None) or []))
+                content = " ".join(getattr(c, "text", "") for c in (getattr(item, "content", None) or []))
+                if (summary or content).strip():
+                    self.step(agent.name, "thought", _short(summary or content, 1200))
+            elif kind == "function_call":
+                self.step(agent.name, "call", _short(item.arguments, 300), tool=item.name)
+            elif kind == "message":
+                text = " ".join(getattr(c, "text", "") for c in item.content if hasattr(c, "text"))
+                if text.strip():
+                    self.step(agent.name, "say", _short(text, 1500))
 
     async def on_tool_start(self, context, agent, tool):
         await super().on_tool_start(context, agent, tool)
-        self.calls.append({"agent": agent.name, "tool": tool.name, "status": "started"})
+        self.calls.append({"agent": agent.name, "tool": tool.name, "status": "started",
+                           "arguments": getattr(context, "tool_arguments", None)})
 
     async def on_tool_end(self, context, agent, tool, result):
         await super().on_tool_end(context, agent, tool, result)
         self.calls.append({"agent": agent.name, "tool": tool.name, "result": str(result)[:600]})
+        self.step(agent.name, "result", _short(str(result), 600), tool=tool.name)
+
+    async def on_agent_end(self, context, agent, output):
+        await super().on_agent_end(context, agent, output)
+        self.step(agent.name, "done", "")
 
 
 @app.get("/")
