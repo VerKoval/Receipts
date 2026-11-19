@@ -4,6 +4,7 @@
   Google Trends, top / rising queries data/rising.parquet
   The closet                          data/closet.csv (synthetic: 60 items, generated for this project)
   Dress codes                         data/dress_codes.csv (hand-built, each row cites a guide or says it can't)
+  Etiquette rules                     data/etiquette.csv (no white at weddings, club door codes...; enforced in code)
   Vibes                               data/vibes.csv (15 aesthetics: key pieces, colours, details; cites Wikipedia)
   Weather                             Open-Meteo, live: a forecast if the date is close, else
                                       multi-year normals; data/climate_fallback.csv if offline
@@ -32,6 +33,7 @@ def db() -> duckdb.DuckDBPyConnection:
     for name in ("trends", "verdicts", "rising"):
         con.execute(f"CREATE VIEW {name} AS SELECT * FROM read_parquet('{(DATA / (name + '.parquet')).as_posix()}')")
     con.execute(f"CREATE VIEW closet AS SELECT * FROM read_csv_auto('{(DATA / 'closet.csv').as_posix()}', all_varchar=false)")
+    con.execute(f"CREATE VIEW etiquette AS SELECT * FROM read_csv_auto('{(DATA / 'etiquette.csv').as_posix()}', all_varchar=true)")
     con.execute(f"CREATE VIEW vibes AS SELECT * FROM read_csv_auto('{(DATA / 'vibes.csv').as_posix()}')")
     con.execute(f"CREATE VIEW dress_codes AS SELECT * FROM read_csv_auto('{(DATA / 'dress_codes.csv').as_posix()}')")
     return con
@@ -154,6 +156,29 @@ def vibe(name: str) -> dict | None:
 
 def vibe_names() -> list[str]:
     return [r["vibe"] for r in _rows("SELECT vibe FROM vibes ORDER BY vibe")]
+
+
+# --- Etiquette rules ---
+
+
+def rules_for(text: str) -> list[dict]:
+    """Every etiquette rule whose trigger words appear in text (the request plus the dress code)."""
+    t = f" {text.lower()} "
+    return [r for r in _rows("SELECT * FROM etiquette")
+            if any(w and w in t for w in r["applies_when"].split("|"))]
+
+
+def breaks_rule(item: dict, rule: dict) -> bool:
+    """True if a closet item is ruled out by a rule: a forbidden colour (in scope) or a forbidden
+    word in its name."""
+    scope = rule.get("scope") or "all"
+    if scope != "all" and item["category"] not in scope.split("|"):
+        return False
+    name, colour = item["item"].lower(), item["colour"].lower()
+    words = [w for w in (rule.get("forbid_words") or "").split("|") if w]
+    colours = [c for c in (rule.get("forbid_colours") or "").split("|") if c]
+    return any(w in name for w in words) or any(c == colour or colour.startswith(c + " ") or c in name.split()
+                                                for c in colours)
 
 
 # --- Dress codes ---

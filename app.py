@@ -35,7 +35,9 @@ MODEL = LitellmModel(model="vertex_ai/gemini-3.5-flash", api_key="unused")
 RESEARCHER_MODEL = LitellmModel(model="vertex_ai/gemini-3.5-flash-lite", api_key="unused")
 # reasoning_effort turns on Gemini's thinking; LiteLLM hands back the thought summary, which the
 # page shows in each agent's column. "low" keeps it fast.
-SETTINGS = ModelSettings(extra_args={"vertex_location": "global", "timeout": 90, "num_retries": 2,
+# num_retries: a new project's Gemini quota is small, so a burst of requests gets 429s. LiteLLM
+# retries those with backoff instead of failing the whole answer.
+SETTINGS = ModelSettings(extra_args={"vertex_location": "global", "timeout": 90, "num_retries": 6,
                                      "reasoning_effort": "low"})
 
 MAX_RESEARCHERS = 7  # across all rounds; keeps every answer well inside the grader's 5 minutes
@@ -48,7 +50,16 @@ class Run:
     hooks: PanelHooks
     researchers: int = 0
     findings: list[str] = field(default_factory=list)  # all the Writer gets to see
-    evidence: dict = field(default_factory=lambda: {"trends": {}, "weather": None, "dress_code": None, "vibes": []})
+    evidence: dict = field(default_factory=lambda: {"trends": {}, "weather": None, "dress_code": None, "vibes": [],
+                                                    "rules": [], "removed": []})
+    rules: dict = field(default_factory=dict)  # rule name -> rule row, active for this request
+
+    def add_rules(self, rows: list[dict]) -> None:
+        for r in rows:
+            if r["rule"] not in self.rules:
+                self.rules[r["rule"]] = r
+                self.evidence["rules"].append(r)
+                self.findings.append("## Etiquette rule (must follow): " + r["rule"] + "\n\n" + json.dumps(r))
 
 
 # ---------------------------------------------------------------- tools: Google Trends
@@ -104,7 +115,8 @@ def rising_queries(query: str = "", category: str = "", kind: str = "rising") ->
 def closet_overview() -> str:
     """The whole closet in one list (under 70 items): id, item, category, formality, warmth,
     seasons, occasions, vibes and trend verdict. Call this first."""
-    cols = ["id", "item", "category", "formality", "warmth", "seasons", "occasions", "vibes", "trend_term", "trend_verdict"]
+    cols = ["id", "item", "category", "colour", "formality", "warmth", "seasons", "occasions", "vibes",
+            "price_paid_usd", "trend_term", "trend_verdict"]
     return json.dumps([{k: r[k] for k in cols if r.get(k) is not None} for r in ds.closet()])
 
 
@@ -167,10 +179,26 @@ def dress_codes(ctx: RunContextWrapper[Run], code: str = "") -> str:
                     + ", ".join(r["code"] for r in rows) + ". Call again with the exact name.")
         if match:
             ctx.context.evidence["dress_code"] = match[0]
+            ctx.context.add_rules(ds.rules_for(match[0]["code"]))
             # The Writer only reads findings, so the dress code goes there too.
             ctx.context.findings.append("## Dress code: " + match[0]["code"] + "\n\n" + json.dumps(match[0]))
             return json.dumps(match)
     return json.dumps(rows)
+
+
+@function_tool
+def etiquette_rules(ctx: RunContextWrapper[Run], situation: str) -> str:
+    """Etiquette rules that apply to a situation: no white at weddings, club door codes, dressing
+    up for upscale places, covering up at religious venues... Each says what is ruled out. The
+    rules are enforced in code: breaking one removes the piece from the outfit.
+
+    Args:
+        situation: the occasion and venue in a few words, e.g. 'wedding guest', 'nightclub in Miami',
+            'parents weekend at a boarding school'.
+    """
+    rows = ds.rules_for(situation)
+    ctx.context.add_rules(rows)
+    return json.dumps(rows) if rows else "No etiquette rules on file for that situation."
 
 
 @function_tool
@@ -220,7 +248,8 @@ clothes: never invent an item.
    search_closet is there if you want to filter, but the list is the truth. If the request names
    a garment, fabric or trend (e.g. velvet), find every item that matches by name or fabric.
    If a vibe is given, it outranks formality: lead with items tagged with that vibe, then the
-   basics that go with them.
+   basics that go with them. Etiquette rules outrank everything: never list a piece they rule out
+   (check colour as well as name). For upscale settings, prefer the pricier, better-made pieces.
 2. Report candidates grouped by category: id, item, formality, warmth, and trend_verdict if it has
    one. At most 4 per category, best first.
 3. End with GAPS: what the occasion needs that the closet does not have (e.g. no floor-length
@@ -277,8 +306,12 @@ async def check_closet(ctx: RunContextWrapper[Run], occasion: str, dress_code: s
         season: spring, summer, fall or winter.
         vibe: the theme or aesthetic if the user named one, e.g. 'punk'. Empty if none.
     """
+    ctx.context.add_rules(ds.rules_for(f"{occasion} {dress_code}"))
+    rules = "\n".join(f"- {r['rule']}: {r['detail']} Ruled out: {r['forbid_colours'] or ''} {r['forbid_words'] or ''}. "
+                      f"Prefer: {r['prefer']}" for r in ctx.context.rules.values()) or "none"
     return await _send(ctx, closet_researcher, f"Closet: {occasion}",
-                       f"Occasion: {occasion}\nDress code: {dress_code}\nSeason: {season}\nVibe: {vibe or 'none given'}")
+                       f"Occasion: {occasion}\nDress code: {dress_code}\nSeason: {season}\n"
+                       f"Vibe: {vibe or 'none given'}\nEtiquette rules (never suggest a piece that breaks one):\n{rules}")
 
 
 @function_tool
@@ -318,9 +351,12 @@ Decide first whether you can act.
 
 Otherwise:
 1. Call dress_codes with the exact name of the one code that fits the event (a summer wedding
-   with no stated code is cocktail; class is casual; a rave or club is "club / rave"; a gig is
-   "concert / festival"; a costume or theme night is "themed party"; drinks out is "night out").
-   If the request names a theme or aesthetic (punk, goth, y2k, preppy, boho...), also call
+   with no stated code is cocktail; class is casual; a nightclub, lounge or "the club" is "nightclub"
+   (dressy: fitted dresses, heels); a rave, warehouse party or techno night is
+   "rave / warehouse"; a gig is "concert / festival"; a costume or theme night is "themed party"; drinks out is "night out").
+   Always call etiquette_rules with the occasion and venue in a few words (e.g. "wedding
+   guest", "nightclub in Miami", "parents weekend at a boarding school").
+   If the request names a theme or aesthetic (punk, goth, y2k, preppy, boho, glam...), also call
    vibe_guide with it, and pass it as vibe to check_closet. Also call tracked_trends, and rising_queries
    (category womenswear or menswear if the request implies one) to see what is hot right now.
 2. In ONE turn, call in parallel: check_closet; check_weather if there is a city (date as
@@ -339,7 +375,7 @@ lead = Agent(
     name="Lead",
     instructions=lead_instructions,
     model=MODEL, model_settings=SETTINGS,
-    tools=[dress_codes, vibe_guide, tracked_trends, rising_queries, check_closet, check_trend, check_weather],
+    tools=[dress_codes, etiquette_rules, vibe_guide, tracked_trends, rising_queries, check_closet, check_trend, check_weather],
 )
 
 
@@ -383,6 +419,8 @@ on-trend one, and a wildcard. Each outfit is a full look of 3-5 pieces (shoes in
 three must differ from each other. Every item carries a stamp and a receipt. Rules:
 - Copy verdict words exactly as the findings give them. Never upgrade TOO_QUIET, TOO_FEW or
   NOT TRACKED into a recommendation.
+- Etiquette rules in the findings are hard rules: never use a piece one rules out, and mention
+  the rule in dress_code_line (e.g. "no white: it's the bride's colour").
 - If the user named a theme or vibe, ALL THREE outfits must clearly read as that vibe; the
   safe/on-trend/wildcard split happens inside the vibe. Use stamp VIBE for pieces the vibe guide
   backs, and quote the guide.
@@ -426,15 +464,25 @@ async def style(request: str, hooks: PanelHooks) -> tuple[str, Report | None, Ru
     findings = "\n\n---\n\n".join(run.findings) or "No findings: the researchers returned nothing."
     result = await Runner.run(writer, f"Request: {request}\n\nFindings:\n\n{findings}", hooks=hooks)
     report: Report = result.final_output
-    # The Writer may only use real closet pieces. Drop any id that isn't in the closet and use the
-    # closet's own name for the rest, so a hallucinated garment can never reach the page.
+    # The Writer may only use real closet pieces that break no etiquette rule. Both are checked
+    # here in code, not trusted to the prompt: a made-up garment or a white dress at a wedding
+    # never reaches the page.
+    rules = list(run.rules.values()) + [r for r in ds.rules_for(request) if r["rule"] not in run.rules]
     for outfit in report.outfits:
         kept = []
         for item in outfit.items:
             real = ds.closet_item(item.closet_id)
-            if real:
-                item.piece = real["item"]
-                kept.append(item)
+            if not real:
+                continue
+            broken = next((r for r in rules if ds.breaks_rule(real, r)), None)
+            if broken:
+                note = f"{real['item']} ({real['id']}) taken out of '{outfit.name}': {broken['rule']}"
+                run.evidence["removed"].append(note)
+                if note not in report.busted:
+                    report.busted.append(note)
+                continue
+            item.piece = real["item"]
+            kept.append(item)
         outfit.items = kept
     report.outfits = [o for o in report.outfits if o.items]
     return to_markdown(report), report, run
@@ -558,7 +606,10 @@ async def run_stream(request: str):
                 queue.put_nowait({"type": "done", "markdown": answer, "report": report.model_dump(),
                                   "evidence": state.evidence, "tool_calls": calls})
         except Exception as e:
-            queue.put_nowait({"type": "error", "message": f"{type(e).__name__}: {str(e)[:500]}"})
+            busy = "RateLimit" in type(e).__name__ or "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e)
+            message = ("Gemini is busy right now (too many requests at once). Wait a minute and try again."
+                       if busy else f"{type(e).__name__}: {str(e)[:500]}")
+            queue.put_nowait({"type": "error", "message": message})
 
     task = asyncio.create_task(work())
 

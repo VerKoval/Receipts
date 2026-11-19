@@ -209,7 +209,7 @@
   <section id="results"></section>
 
   <section>
-    <div class="section-title"><span>THE CLOSET · 67 ITEMS (SYNTHETIC, MADE FOR THIS DEMO)</span><span id="closet-note">scroll →</span></div>
+    <div class="section-title"><span>THE CLOSET · 71 ITEMS (SYNTHETIC, MADE FOR THIS DEMO)</span><span id="closet-note">scroll →</span></div>
     <div class="closet" id="closet"></div>
   </section>
 
@@ -238,6 +238,8 @@ const EXAMPLES = [
   "Cocktail holiday party in Chicago on Dec 12",
   "Is velvet actually in this year?",
   "Punk-themed rave in Bushwick this Saturday",
+  "Going to a club in Miami Saturday night",
+  "Parents' weekend at my brother's boarding school in Connecticut",
   "What should I wear?",
 ];
 $("chips").innerHTML = EXAMPLES.map((e) => `<button type="button" class="chip">${esc(e)}</button>`).join("");
@@ -354,7 +356,15 @@ function run(q) {
     else if (e.type === "step") addStep(e);
     else if (e.type === "question") { finish(); ask(e.text); }
     else if (e.type === "error") { finish(); $("question").innerHTML = `<div class="paper"><div class="center"><b>PRINTER JAM</b></div><hr class="rule"/><div class="small">${esc(e.message)}</div></div>`; }
-    else if (e.type === "done") { finish(); render(e); }
+    else if (e.type === "done") {
+      finish();
+      try { render(e); }
+      catch (err) {
+        console.error(err);
+        $("results").className = "on";
+        $("results").innerHTML = `<div class="paper"><div class="small">PRINTER HICCUP</div><hr class="rule"/><div style="font-size:.8rem">The answer came back but the page couldn't draw it (${esc(err.message)}). Plain version:</div><pre style="white-space:pre-wrap;font-size:.75rem;margin-top:.6rem">${esc(e.markdown)}</pre></div>`;
+      }
+    }
   };
   source.onerror = () => { finish(); };
 }
@@ -419,6 +429,11 @@ function render(e) {
   if (r.busted.length) {
     html += `<div class="paper skip"><span class="stamp s-FADING big-stamp">SKIP</span><div class="small">THE DATA SAYS SKIP</div><hr class="rule"/>
       ${r.busted.map((b) => `<div style="font-size:.8rem;padding:.2rem 0">✗ ${esc(b)}</div>`).join("")}</div>`;
+  }
+
+  if ((ev.rules || []).length) {
+    html += `<div class="paper"><span class="stamp s-DRESS big-stamp">HOUSE RULES</span><div class="small">ETIQUETTE APPLIED (ENFORCED IN CODE)</div><hr class="rule"/>
+      ${ev.rules.map((x) => `<div style="font-size:.8rem;padding:.25rem 0"><b>${esc(x.rule)}</b>: ${esc(x.detail)} <span class="small">source: ${srcLink(x.source)}</span></div>`).join("")}</div>`;
   }
 
   if (r.gaps && r.gaps.length) {
