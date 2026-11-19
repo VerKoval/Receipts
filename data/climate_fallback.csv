@@ -1,0 +1,9 @@
+city,month,high_c,low_c,rain_days
+charleston,4,24.0,12.0,7
+new york,4,17.0,8.0,9
+new york,10,18.0,10.0,8
+london,6,21.0,12.0,9
+cartagena,3,31.0,24.0,1
+los angeles,9,28.0,18.0,1
+chicago,10,16.0,7.0,8
+miami,12,26.0,18.0,6
