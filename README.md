@@ -12,7 +12,9 @@ missing.
 **Who it's for:** anyone standing in front of a full closet with nothing to wear, who would
 rather re-wear what they own than buy something because a video said it's "in".
 
-Deployed: see `deploy_url` in `submission.json`. Path: **Deep Research**.
+**Deployed:** https://receipts-689983275847.us-central1.run.app. Sign in with a **@columbia.edu** Google account:
+the Cloud Run project sits in Columbia's Google organization, which doesn't allow public services,
+so access goes through Identity-Aware Proxy. Path: **Deep Research**.
 
 ## How it works
 
@@ -85,44 +87,44 @@ sub-agent's tool calls are in `tool_calls` with an `agent` field.
 
 ## Three sample queries
 
-Real outputs from this code run locally on Nov 18, 2026 (Gemini 3.5 Flash on Vertex AI), next to the same model with no tools and no system prompt. The no-tools model gives long, confident, generic advice. It can't know the closet, cites no numbers or sources, and has no idea whether anything is actually rising.
+Real outputs from this code run locally on Nov 19, 2026 (Gemini 3.5 Flash on Vertex AI), next to the same model with no tools and no system prompt. The no-tools model gives long, confident, generic advice. It can't know the closet, cites no numbers or sources, and has no idea whether anything is actually rising.
 
 ### 1. "What should I wear to a summer wedding in Charleston?"
 
-**Expected:** Three outfits from closet ids only: `c21` sage slip dress or `c23` little black dress with `c40` block-heel sandals. Dress code cocktail, cited to withjoy.com. June five-year average from Open-Meteo: high 29.4 °C, low 23.1 °C, about 16 days with rain. `mini dress` is `RISING` (+36%).
+**Expected:** Three outfits from closet ids only, built around `c25` navy sheath, `c23` little black dress or `c21` sage slip dress. Cocktail dress code, cited to withjoy.com, with the etiquette rule 'no white: it's the bride's colour' (white, ivory and cream pieces are removed in code). Summer average from Open-Meteo (about 85–88 °F highs). `mini dress` is `RISING` (+36%).
 
 **Source:** `data/closet.csv`, `data/dress_codes.csv`, `data/verdicts.parquet`, Open-Meteo archive API
 
-<details><summary><b>Agent</b> (36s, 5 researchers, 16 tool results)</summary>
+<details><summary><b>Agent</b> (160s, 6 researchers, 20 tool results)</summary>
 
-**A curated wedding-guest guide for hot, damp Charleston weather with classic and trending options**
+**Beat the heat and the rain in Charleston with lightweight dresses and strappy heels**
 
-- Weather: High of 29.4—C (84.9—F) and low of 23.1—C (73.6—F) in June, based on Open-Meteo historical archive
-- Dress code: Cocktail: midi dress, sharp jumpsuit, suit and tie, heels or dressy flats according to https://withjoy.com/blog/wedding-guest-dress-code-guide/
+- Weather: 88—F (31—C) to 77—F (25—C) according to Open-Meteo historical archive, 2021-2025 average
+- Dress code: cocktail: knee-to-midi dress or dressy separates, heels or dressy flats (no white: it's the bride's colour)
+- Vibe: none asked
 
-### The Safe Bet — classic cocktail romance
-- **sage green slip dress** (c21) `DRESS CODE` midi dress meets cocktail code according to https://withjoy.com/blog/wedding-guest-dress-code-guide/
-- **nude block-heel sandals** (c40) `WEATHER` airy sandals suit high of 29.4C according to Open-Meteo
-- **beaded clutch** (c53) `TASTE` my taste, not the data
+### The Safe Bet — classic navy chic
+- **navy sheath dress** (c25) `DRESS CODE` formality score 4, cocktail code guide
+- **nude block-heel sandals** (c40) `STEADY` +14% change vs last year, Google Trends
+- **beaded clutch** (c53) `DRESS CODE` formality score 5, cocktail code guide
 
-This classic sage green slip dress meets the cocktail requirement perfectly, while the breathable fabric and airy sandals keep you comfortable in the warm Charleston heat.
+The navy sheath dress offers a classic cocktail silhouette, paired with stable block-heel sandals for a secure step on humid or wet Charleston streets.
 
-### On Trend — modern trending evening
-- **little black dress** (c23) `RISING` mini dress up +36% over last year according to Google Trends
-- **black pointed-toe pumps** (c41) `TASTE` my taste, not the data
+### On Trend — playful modern cocktail
+- **little black dress** (c23) `RISING` up +36% on the year before, Google Trends
+- **black strappy stiletto sandals** (c70) `STEADY` +12% change vs last year, Google Trends
+- **beaded clutch** (c53) `DRESS CODE` formality score 5, cocktail code guide
+
+The rising mini dress is lightweight and breathable for hot Southern nights, while the black strappy stilettos keep it dressy and elevated for a cocktail party.
+
+### The Wildcard — cool minimal slip
+- **sage green slip dress** (c21) `WEATHER` warmth score 1 for high 88—F (31—C), Open-Meteo
+- **silver strappy heels** (c48) `STEADY` +12% change vs last year, Google Trends
 - **gold hoop earrings** (c50) `TASTE` my taste, not the data
 
-This trending little black dress gives a sharp cocktail silhouette, paired with pumps for an elegant, elevated appearance.
+A minimalist sage green slip is incredibly light in 88—F (31—C) weather, and pairing it with silver heels and gold hoops adds an unexpected mixed-metal twist.
 
-### The Wildcard — polished structured separates
-- **white silk-look blouse** (c05) `TASTE` my taste, not the data
-- **black satin midi skirt** (c17) `DRESS CODE` dressy separates fit cocktail format according to https://withjoy.com/blog/wedding-guest-dress-code-guide/
-- **black pointed-toe pumps** (c41) `TASTE` my taste, not the data
-- **pearl hair clip** (c58) `TASTE` my taste, not the data
-
-Choosing dressy satin separates offers a modern twist on standard guest attire, keeping you breezy and elegant through the reception.
-
-_What the data can't tell you:_ The data cannot confirm the exact local rain forecast for the specific calendar day, only historical averages.
+_What the data can't tell you:_ whether the rain probability for July 15 will require an umbrella, as the historical data only lists averages
 
 </details>
 
@@ -193,42 +195,44 @@ Do not underestimate the Southern humidity. Add these items to your packing list
 
 ### 2. "Business casual first day at an internship in Seattle on Dec 1"
 
-**Expected:** Formality-3 pieces: `c04` oxford, `c14`/`c15` trousers, `c39` loafers, and `c60` wool coat for the cold. The live Open-Meteo forecast for Dec 1 (high about 8 °C, 42% rain). `cropped jacket` is `RISING` (+39%), backing `c34` tweed jacket.
+**Expected:** Formality-3 pieces: `c04` oxford, `c14`/`c15` trousers, `c39` loafers, and `c60` wool coat for the cold. The live Open-Meteo forecast for Dec 1 (high about 46 °F, 42% rain). `cropped jacket` is `RISING` (+39%), backing `c34` tweed jacket.
 
 **Source:** `data/closet.csv`, `data/dress_codes.csv`, `data/verdicts.parquet`, Open-Meteo forecast API
 
-<details><summary><b>Agent</b> (23s, 5 researchers, 16 tool results)</summary>
+<details><summary><b>Agent</b> (28s, 4 researchers, 12 tool results)</summary>
 
-**A warm and professional start for your Seattle internship**
+**A professional start in Seattle with layered trousers and warm outerwear**
 
-- Weather: High of 7.6—C (45.7—F), low of 4.8—C (40.6—F) with a 42% chance of rain (Open-Meteo)
-- Dress code: Business casual first day at an internship
+- Weather: 46—F (8—C) to 41—F (5—C) with a 42% chance of rain, Open-Meteo
+- Dress code: business casual: neat and professional without a full suit, trousers or knee-length skirt, button-up or knit top, blazer optional, loafers, no ripped jeans or flip-flops
+- Vibe: none asked
 
-### The Safe Bet — polished and warm
-- **light blue oxford button-down** (c04) `TASTE` my taste, not the data
-- **grey pleated trousers** (c15) `TASTE` my taste, not the data
-- **black wool coat** (c60) `WEATHER` wool is ideal for chilly 7.6—C weather according to Open-Meteo
+### The Safe Bet — classic office professional
+- **light blue oxford button-down** (c04) `STEADY` dress shirt search interest is stable on Google Trends
+- **black wide-leg trousers** (c14) `DRESS CODE` trousers are recommended by the tieroom.com dress-code guide
+- **black wool coat** (c60) `WEATHER` provides high warmth for 46—F (8—C) per Open-Meteo
 - **black loafers** (c39) `TASTE` my taste, not the data
 
-This outfit combines tailored elements to ensure a highly professional first impression while keeping you warm in the chilly Seattle winter weather.
+This classic pairing of a stable blue button-down and black trousers fits the business casual code perfectly, while the heavy wool coat keeps you warm in the chilly 46—F (8—C) Seattle winter.
 
-### On Trend — modern and textured
+### On Trend — modern tailored polish
+- **grey pleated trousers** (c15) `DRESS CODE` trousers fit the neat and professional standard of the tieroom.com guide
+- **cropped tweed jacket** (c34) `RISING` cropped jacket searches are up on Google Trends
 - **white silk-look blouse** (c05) `TASTE` my taste, not the data
-- **black wide-leg trousers** (c14) `TASTE` my taste, not the data
-- **cropped tweed jacket** (c34) `RISING` up +39% on the year before (Google Trends)
 - **black loafers** (c39) `TASTE` my taste, not the data
 
-The cropped jacket is highly on-trend and pairs perfectly with wide-leg trousers for a sharp, modern business casual look.
+This ensemble incorporates the rising cropped jacket trend over a neat blouse and pleated trousers, providing a sharp and contemporary business casual look.
 
-### The Wildcard — sleek and cosy
-- **long-sleeve black knit dress** (c27) `TASTE` my taste, not the data
-- **sheer black tights** (c54) `RISING` rising trend in recent data (Google Trends)
+### The Wildcard — textured winter tailoring
+- **black satin midi skirt** (c17) `TASTE` my taste, not the data
+- **sheer black tights** (c54) `RISING` stockings searches are growing on Google Trends
+- **cream cable-knit sweater** (c07) `WEATHER` warmth rating 4 is ideal for cold 41—F (5—C) lows per Open-Meteo
 - **black oversized blazer** (c29) `TASTE` my taste, not the data
-- **tan ankle boots** (c43) `WEATHER` sturdy boots are ideal for the 42% rain chance (Open-Meteo)
+- **tan ankle boots** (c43) `WEATHER` boots offer sturdier footwear for wet Seattle streets
 
-This option plays with proportions by layering an oversized blazer over a fitted knit dress, kept warm and practical with trending tights and rain-ready boots.
+This outfit mixes textures with satin and knitwear, layered under an oversized blazer. It utilizes rising sheer black tights to keep you warm against the cold, damp climate.
 
-_What the data can't tell you:_ There is no trend data available for loafers, ankle boots, wool coats, or knit wear.
+_What the data can't tell you:_ The trend data for loafers and blazers could not be determined as they were not tracked.
 
 </details>
 
@@ -279,46 +283,40 @@ Good luck! You're going to look great.
 
 ### 3. "Is velvet actually in this year?"
 
-**Expected:** `velvet dress` is `RISING`: 12-month median 24.3 vs 13.0 the year before (+87%), peaks every November, April–May 2026 left out as anomalies. Outfits are built around `c24` burgundy velvet midi dress.
+**Expected:** `velvet dress` is `RISING`: 12-month median 24.3 vs 13.0 the year before (+87%), peaks every November, April–May 2026 left out as anomalies. Outfits are built around `c24` burgundy velvet midi dress, e.g. with `c42` combat boots (`combat boot` is `RISING` +25%).
 
-**Source:** `data/verdicts.parquet` (from `build/raw/trends_timeseries/velvet_dress.csv`), `data/closet.csv`
+**Source:** `data/verdicts.parquet` (from `build/raw/trends_timeseries/time_series_US_20211118-2116_*.csv`), `data/closet.csv`
 
-<details><summary><b>Agent</b> (34s, 3 researchers, 11 tool results)</summary>
+<details><summary><b>Agent</b> (19s, 3 researchers, 11 tool results)</summary>
 
-**Velvet is rising sharply for fall, and your burgundy dress is ready for smart casual wear**
+**Velvet is rising with velvet dresses up 87% this year**
 
 - Weather: not checked
-- Dress code: smart casual (formality level 2-3)
+- Dress code: casual: whatever is comfortable and clean (source: withjoy.com)
+- Vibe: none asked
 
-### The Safe Bet — polished classic prep
-- **burgundy velvet midi dress** (c24) `RISING` up +87% on Google Trends
-- **camel trench coat** (c30) `STEADY` stable interest on Google Trends
-- **black loafers** (c39) `TASTE` my taste, not the data
+### The Safe Bet — casual velvet styling
+- **burgundy velvet midi dress** (c24) `RISING` up +87% on the year before (Google Trends)
+- **black faux-leather jacket** (c31) `STEADY` leather jacket is steady (Google Trends)
+- **white low-top sneakers** (c37) `STEADY` converse is steady (Google Trends)
 
-This balances the dressy burgundy velvet with a steady camel trench coat and classic loafers for an approachable smart casual outfit.
+This outfit tones down the velvet dress for a casual setting by pairing it with casual sneakers and a classic faux-leather jacket.
 
-### On Trend — textured modern contrast
-- **burgundy velvet midi dress** (c24) `RISING` up +87% on Google Trends
-- **cropped tweed jacket** (c34) `RISING` up +39% on Google Trends
-- **sheer black tights** (c54) `RISING` rising interest on Google Trends
-- **black loafers** (c39) `TASTE` my taste, not the data
+### On Trend — edgy winter layers
+- **burgundy velvet midi dress** (c24) `RISING` up +87% on the year before (Google Trends)
+- **sheer black tights** (c54) `RISING` stockings are rising (Google Trends)
+- **black combat boots** (c42) `RISING` combat boot is rising (Google Trends)
 
-This look combines the rising velvet dress and cropped tweed jacket to create a highly fashionable, textured look.
+This look combines the rising velvet dress trend with rising sheer tights and combat boots for a current, slightly edgy style.
 
-### The Wildcard — edgy fall romance
-- **burgundy velvet midi dress** (c24) `RISING` up +87% on Google Trends
-- **black faux-leather jacket** (c31) `STEADY` stable interest on Google Trends
-- **black loafers** (c39) `TASTE` my taste, not the data
-- **small black shoulder bag** (c52) `TASTE` my taste, not the data
+### The Wildcard — cozy texture mix
+- **burgundy velvet midi dress** (c24) `RISING` up +87% on the year before (Google Trends)
+- **oversized grey hoodie** (c03) `TASTE` my taste, not the data
+- **white low-top sneakers** (c37) `STEADY` converse is steady (Google Trends)
 
-The contrast between the soft velvet dress and the tough leather jacket creates a cool, unexpected everyday styling.
+Throwing an oversized grey hoodie over the midi dress turns it into a relaxed, unexpected skirt look that fits a casual day perfectly.
 
-### Your closet is missing
-- velvet blazer
-- velvet trousers
-- velvet skirt
-
-_What the data can't tell you:_ The data could not confirm whether velvet tops or shoes are trending, as search findings were restricted to velvet dresses.
+_What the data can't tell you:_ I could not analyze the velvet blazer trend because it is not tracked in the database.
 
 </details>
 
