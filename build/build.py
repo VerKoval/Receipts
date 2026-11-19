@@ -121,13 +121,13 @@ def score(df: pd.DataFrame) -> pd.DataFrame:
 
 # --- 2. Google Trends: related queries (top / rising) --------------------------------------
 
-# The CSV names say when, not which category. I picked the category on the Trends page for each
-# download; this records it, inferred from what the queries are about.
-CATEGORY_BY_WINDOW = {
-    "20251118-2050": "apparel, all (past 12 months)",
-    "20211118-2051": "fashion & style (past 5 years)",
-    "20261018-2052": "womenswear (past 30 days)",
-    "20261018-2054": "menswear (past 30 days)",
+# Files are named <category>_<window>_<top|rising>.csv. The exact date window each was downloaded
+# for lives here (Google's own file names had it), because the agent cites it.
+WINDOWS = {
+    "apparel_past_12_months": ("apparel, all (past 12 months)", "2025-11-18", "2026-11-18"),
+    "fashion_past_5_years": ("fashion & style (past 5 years)", "2021-11-18", "2026-11-18"),
+    "womenswear_past_30_days": ("womenswear (past 30 days)", "2026-10-18", "2026-11-18"),
+    "menswear_past_30_days": ("menswear (past 30 days)", "2026-10-18", "2026-11-18"),
 }
 
 # Related queries pull in whatever else people typed. These are not clothes.
@@ -145,14 +145,14 @@ NOISE = re.compile(
 def load_related() -> pd.DataFrame:
     frames = []
     for path in sorted((RAW / "trends_related").glob("*.csv")):
-        m = re.search(r"(top|rising)-searches_queries_US_(\d{8})-(\d{4})_(\d{8})", path.name)
-        kind, start, stamp, end = m.groups()
+        name, kind = path.stem.rsplit("_", 1)  # e.g. womenswear_past_30_days, rising
+        category, start, end = WINDOWS[name]
         df = pd.read_csv(path)
         df.columns = ["query", "interest", "increase"]
         df["kind"] = kind
         df["window_start"] = pd.to_datetime(start).date()
         df["window_end"] = pd.to_datetime(end).date()
-        df["category"] = CATEGORY_BY_WINDOW.get(f"{start}-{stamp}", "unknown")
+        df["category"] = category
         df["source_file"] = path.name
         frames.append(df)
     df = pd.concat(frames)

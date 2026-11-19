@@ -281,7 +281,7 @@ Good luck! You're going to look great.
 
 **Expected:** `velvet dress` is `RISING`: 12-month median 24.3 vs 13.0 the year before (+87%), peaks every November, April–May 2026 left out as anomalies. Outfits are built around `c24` burgundy velvet midi dress.
 
-**Source:** `data/verdicts.parquet` (from `build/raw/trends_timeseries/time_series_US_20211118-2116_*.csv`), `data/closet.csv`
+**Source:** `data/verdicts.parquet` (from `build/raw/trends_timeseries/velvet_dress.csv`), `data/closet.csv`
 
 <details><summary><b>Agent</b> (34s, 3 researchers, 11 tool results)</summary>
 
