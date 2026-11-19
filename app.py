@@ -13,6 +13,7 @@ The verdict words are computed by build/build.py. The model looks them up; it ne
 
 import asyncio
 import json
+import os
 import uuid
 from dataclasses import dataclass, field
 from datetime import date
@@ -31,6 +32,8 @@ from context_panel import AgentContexts, PanelHooks, add_context_panel
 set_tracing_disabled(True)
 
 # Gemini on Vertex through LiteLLM. On Cloud Run the service account authenticates; no API key.
+# Which project pays for Gemini: an env var wins, otherwise this project's own.
+os.environ.setdefault("VERTEXAI_PROJECT", os.environ.get("GOOGLE_CLOUD_PROJECT", "receipts-closet"))
 MODEL = LitellmModel(model="vertex_ai/gemini-3.5-flash", api_key="unused")
 RESEARCHER_MODEL = LitellmModel(model="vertex_ai/gemini-3.5-flash-lite", api_key="unused")
 # reasoning_effort turns on Gemini's thinking; LiteLLM hands back the thought summary, which the

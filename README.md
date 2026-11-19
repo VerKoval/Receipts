@@ -71,7 +71,7 @@ uv run app.py      # http://localhost:8000
 ```
 
 The model is Gemini on Vertex AI, so there is no API key. Locally, run `gcloud auth application-default login`
-and set `VERTEXAI_PROJECT=receipts-closet`. On Cloud Run the service account authenticates.
+(the app defaults to the `receipts-closet` project; set `VERTEXAI_PROJECT` to use another). On Cloud Run the service account authenticates.
 
 **Watch every agent think:** the button under the order form opens one live column per agent
 (Lead, each researcher, Writer), side by side. Each column shows its task, Gemini's thought
