@@ -233,14 +233,11 @@ const stamp = (w) => `<span class="stamp ${stampClass(w)}">${esc(String(w).toUpp
 
 const EXAMPLES = [
   "What should I wear to a summer wedding in Charleston?",
-  "What do I wear to class this week in Boston?",
-  "Business casual first day at an internship in Seattle on Dec 1",
-  "Cocktail holiday party in Chicago on Dec 12",
-  "Is velvet actually in this year?",
-  "Punk-themed rave in Bushwick this Saturday",
   "Going to a club in Miami Saturday night",
+  "Punk-themed rave in Bushwick this Saturday",
   "Parents' weekend at my brother's boarding school in Connecticut",
-  "What should I wear?",
+  "Business casual first day at an internship in Seattle on Dec 1",
+  "Is velvet actually in this year?",
 ];
 $("chips").innerHTML = EXAMPLES.map((e) => `<button type="button" class="chip">${esc(e)}</button>`).join("");
 $("chips").onclick = (ev) => { if (ev.target.classList.contains("chip")) { $("request").value = ev.target.textContent; start(); } };
