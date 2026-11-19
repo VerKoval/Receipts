@@ -48,7 +48,7 @@ class Run:
     hooks: PanelHooks
     researchers: int = 0
     findings: list[str] = field(default_factory=list)  # all the Writer gets to see
-    evidence: dict = field(default_factory=lambda: {"trends": {}, "weather": None, "dress_code": None})
+    evidence: dict = field(default_factory=lambda: {"trends": {}, "weather": None, "dress_code": None, "vibes": []})
 
 
 # ---------------------------------------------------------------- tools: Google Trends
@@ -102,15 +102,16 @@ def rising_queries(query: str = "", category: str = "", kind: str = "rising") ->
 
 @function_tool
 def closet_overview() -> str:
-    """The whole closet in one list (it is only 60 items): id, item, category, formality, warmth,
-    seasons, occasions and trend verdict. Call this first."""
-    cols = ["id", "item", "category", "formality", "warmth", "seasons", "occasions", "trend_term", "trend_verdict"]
+    """The whole closet in one list (under 70 items): id, item, category, formality, warmth,
+    seasons, occasions, vibes and trend verdict. Call this first."""
+    cols = ["id", "item", "category", "formality", "warmth", "seasons", "occasions", "vibes", "trend_term", "trend_verdict"]
     return json.dumps([{k: r[k] for k in cols if r.get(k) is not None} for r in ds.closet()])
 
 
 @function_tool
 def search_closet(category: str = "", occasion: str = "", season: str = "", min_formality: int = 0,
-                  max_formality: int = 5, min_warmth: int = 0, max_warmth: int = 5, text: str = "") -> str:
+                  max_formality: int = 5, min_warmth: int = 0, max_warmth: int = 5, text: str = "",
+                  vibe: str = "") -> str:
     """Closet items matching every filter you give. Formality and warmth run 0-5. Each item has an
     id (c01...), and a trend_term + trend_verdict when it maps to a tracked Google Trends term.
 
@@ -123,8 +124,9 @@ def search_closet(category: str = "", occasion: str = "", season: str = "", min_
         min_warmth: lowest warmth (0-5).
         max_warmth: highest warmth (0-5).
         text: optional word matched against item name, fabric, colour and trend, e.g. 'velvet' or 'linen'.
+        vibe: optional aesthetic tag, e.g. 'punk', 'goth', 'preppy', 'boho'.
     """
-    rows = ds.closet(category, max_warmth, min_warmth, min_formality, max_formality, season, occasion, text)
+    rows = ds.closet(category, max_warmth, min_warmth, min_formality, max_formality, season, occasion, text, vibe)
     return json.dumps(rows) if rows else "Nothing in the closet matches. Say so: that is a gap, not an error."
 
 
@@ -151,17 +153,41 @@ def dress_codes(ctx: RunContextWrapper[Run], code: str = "") -> str:
     """The dress-code table: formality 1-5, what to reach for, what to avoid, and the source.
 
     Args:
-        code: optional, e.g. 'cocktail'. Empty returns all codes.
+        code: the exact code name, e.g. 'cocktail', 'club / rave', 'themed party'. Empty lists them all.
     """
     rows = ds.dress_codes()
     if code:
-        match = [r for r in rows if code.lower() in r["code"].lower()]
+        q = code.strip().lower()
+        # Exact name first: a plain substring match once turned "casual" into "business casual".
+        match = ([r for r in rows if r["code"].lower() == q]
+                 or [r for r in rows if q in [p.strip() for p in r["code"].lower().split("/")]]
+                 or [r for r in rows if q in r["code"].lower()])
+        if not match:
+            return (f"No dress code called {code!r}. Pick one of: "
+                    + ", ".join(r["code"] for r in rows) + ". Call again with the exact name.")
         if match:
             ctx.context.evidence["dress_code"] = match[0]
             # The Writer only reads findings, so the dress code goes there too.
             ctx.context.findings.append("## Dress code: " + match[0]["code"] + "\n\n" + json.dumps(match[0]))
             return json.dumps(match)
     return json.dumps(rows)
+
+
+@function_tool
+def vibe_guide(ctx: RunContextWrapper[Run], vibe: str) -> str:
+    """What an aesthetic or theme looks like: key pieces, colours, details, what to avoid, and a
+    source. Call it whenever the request names a theme or vibe (punk, goth, y2k, preppy...).
+
+    Args:
+        vibe: the aesthetic, e.g. 'punk', 'riot grrrl', 'quiet luxury', 'rave'.
+    """
+    v = ds.vibe(vibe)
+    if v is None:
+        return (f"No vibe called {vibe!r} in the guide. Known: {', '.join(ds.vibe_names())}. "
+                "If none fit, say the guide doesn't cover it.")
+    ctx.context.evidence.setdefault("vibes", []).append(v)
+    ctx.context.findings.append("## Vibe: " + v["vibe"] + "\n\n" + json.dumps(v))
+    return json.dumps(v)
 
 
 # ---------------------------------------------------------------- researchers
@@ -193,6 +219,8 @@ clothes: never invent an item.
    implies (casual 1-2, business casual 3, cocktail 4, black tie 5), the season and the warmth.
    search_closet is there if you want to filter, but the list is the truth. If the request names
    a garment, fabric or trend (e.g. velvet), find every item that matches by name or fabric.
+   If a vibe is given, it outranks formality: lead with items tagged with that vibe, then the
+   basics that go with them.
 2. Report candidates grouped by category: id, item, formality, warmth, and trend_verdict if it has
    one. At most 4 per category, best first.
 3. End with GAPS: what the occasion needs that the closet does not have (e.g. no floor-length
@@ -238,16 +266,18 @@ async def check_trend(ctx: RunContextWrapper[Run], term: str) -> str:
 
 
 @function_tool
-async def check_closet(ctx: RunContextWrapper[Run], occasion: str, dress_code: str, season: str) -> str:
+async def check_closet(ctx: RunContextWrapper[Run], occasion: str, dress_code: str, season: str,
+                       vibe: str = "") -> str:
     """Send a Closet Researcher to find candidate pieces in the closet.
 
     Args:
         occasion: e.g. 'summer wedding guest'.
-        dress_code: e.g. 'cocktail' or 'business casual'.
+        dress_code: e.g. 'cocktail' or 'club / rave'.
         season: spring, summer, fall or winter.
+        vibe: the theme or aesthetic if the user named one, e.g. 'punk'. Empty if none.
     """
     return await _send(ctx, closet_researcher, f"Closet: {occasion}",
-                       f"Occasion: {occasion}\nDress code: {dress_code}\nSeason: {season}")
+                       f"Occasion: {occasion}\nDress code: {dress_code}\nSeason: {season}\nVibe: {vibe or 'none given'}")
 
 
 @function_tool
@@ -286,8 +316,11 @@ Decide first whether you can act.
   check_closet (occasion: "everyday, wearing <the trend>") so the answer uses pieces the user owns.
 
 Otherwise:
-1. Call dress_codes with the one code that fits the occasion (always pass a code; a summer
-   wedding with no stated code is cocktail, college is casual), tracked_trends, and rising_queries
+1. Call dress_codes with the exact name of the one code that fits the event (a summer wedding
+   with no stated code is cocktail; class is casual; a rave or club is "club / rave"; a gig is
+   "concert / festival"; a costume or theme night is "themed party"; drinks out is "night out").
+   If the request names a theme or aesthetic (punk, goth, y2k, preppy, boho...), also call
+   vibe_guide with it, and pass it as vibe to check_closet. Also call tracked_trends, and rising_queries
    (category womenswear or menswear if the request implies one) to see what is hot right now.
 2. In ONE turn, call in parallel: check_closet; check_weather if there is a city (date as
    YYYY-MM-DD; for a month or season alone use the 15th of the next such month); and check_trend
@@ -305,7 +338,7 @@ lead = Agent(
     name="Lead",
     instructions=lead_instructions,
     model=MODEL, model_settings=SETTINGS,
-    tools=[dress_codes, tracked_trends, rising_queries, check_closet, check_trend, check_weather],
+    tools=[dress_codes, vibe_guide, tracked_trends, rising_queries, check_closet, check_trend, check_weather],
 )
 
 
@@ -316,7 +349,7 @@ class Item(BaseModel):
     closet_id: str = Field(description="the closet id, e.g. 'c24'")
     piece: str = Field(description="the closet item's name, exactly as the findings give it")
     stamp: str = Field(description="the evidence backing it: a trend verdict (RISING, STEADY, FADING, TOO_QUIET), "
-                                   "WEATHER, DRESS CODE, or TASTE if no finding supports it")
+                                   "WEATHER, DRESS CODE, VIBE, or TASTE if no finding supports it")
     receipt: str = Field(description="one short line of evidence with a number and its source "
                                      "(Google Trends / Open-Meteo / dress-code guide), or 'my taste, not the data'")
 
@@ -332,6 +365,7 @@ class Report(BaseModel):
     headline: str = Field(description="one line summary of the answer")
     weather_line: str = Field(description="the weather in one line with numbers and source, or 'not checked'")
     dress_code_line: str = Field(description="the dress code in one line, or 'n/a'")
+    vibe_line: str = Field(description="the requested theme/vibe in one line with its key pieces, or 'none asked'")
     outfits: list[Outfit] = Field(description="exactly three outfits, unless the request was only about a trend")
     busted: list[str] = Field(description="closet pieces whose trend is FADING, with the number and why to skip them now")
     gaps: list[str] = Field(description="what the occasion needs that the closet lacks; empty if nothing")
@@ -348,7 +382,12 @@ on-trend one, and a wildcard. Each outfit is a full look of 3-5 pieces (shoes in
 three must differ from each other. Every item carries a stamp and a receipt. Rules:
 - Copy verdict words exactly as the findings give them. Never upgrade TOO_QUIET, TOO_FEW or
   NOT TRACKED into a recommendation.
-- A piece whose trend is FADING goes in `busted`, never in the on-trend outfit.
+- If the user named a theme or vibe, ALL THREE outfits must clearly read as that vibe; the
+  safe/on-trend/wildcard split happens inside the vibe. Use stamp VIBE for pieces the vibe guide
+  backs, and quote the guide.
+- A piece whose trend is FADING goes in `busted`, never in the on-trend outfit, unless it is a
+  key piece of the requested vibe (combat boots for punk): then use it, stamp it FADING, and say
+  plainly that searches are down but the look needs it.
 - Never invent a garment. If the closet lacks something the occasion needs, put it in `gaps`,
   but only when the findings show the closet was searched for it and nothing came back.
 - An item with no supporting finding gets stamp TASTE and receipt "my taste, not the data".
@@ -362,7 +401,8 @@ three must differ from each other. Every item carries a stamp and a receipt. Rul
 
 
 def to_markdown(r: Report) -> str:
-    lines = [f"**{r.headline}**", "", f"- Weather: {r.weather_line}", f"- Dress code: {r.dress_code_line}", ""]
+    lines = [f"**{r.headline}**", "", f"- Weather: {r.weather_line}", f"- Dress code: {r.dress_code_line}",
+             f"- Vibe: {r.vibe_line}", ""]
     for o in r.outfits:
         lines += [f"### {o.name} — {o.vibe}"]
         lines += [f"- **{i.piece}** ({i.closet_id}) `{i.stamp}` {i.receipt}" for i in o.items]

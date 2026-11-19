@@ -49,8 +49,9 @@ than they are.
 |---|---|---|
 | Google Trends, *interest over time* | Monthly US search interest, Nov 2021 – Nov 2026, 24 terms in 4 downloads (`build/raw/trends_timeseries/`) | Downloaded by hand from trends.google.com (Explore → US → past 5 years → ↓ CSV). Google Trends has no free API. |
 | Google Trends, *related queries* | Top and rising searches for 4 windows/categories (womenswear and menswear for the past 30 days, apparel for the past 12 months, fashion for the past 5 years) (`build/raw/trends_related/`) | Same page, "Related queries" ↓. Noise (sports, Wordle, celebrities) is filtered in the build. |
-| Synthetic closet | 60 items with category, colour, fabric, warmth 0–5, formality 0–5, seasons, occasions, and a `trend_term` linking it to a Google Trends term (`data/closet.csv`) | Written for this project. **Synthetic, and labelled as such on the page.** |
-| Dress codes | 11 codes with formality, what to reach for and what to avoid; every row cites the guide it came from (`data/dress_codes.csv`) | Hand-built |
+| Synthetic closet | 67 items with category, colour, fabric, warmth 0–5, formality 0–5, seasons, occasions, vibe tags (punk, goth, preppy…), and a `trend_term` linking it to a Google Trends term (`data/closet.csv`) | Written for this project. **Synthetic, and labelled as such on the page.** |
+| Dress codes | 17 codes, from black tie to club / rave, concert, themed party and night out. Each has formality, what to reach for and what to avoid. The 11 classic codes cite etiquette guides; the 6 event codes are marked as hand-written project notes (`data/dress_codes.csv`) | Hand-built |
+| Vibes | 15 aesthetics (punk, grunge, goth, rave, y2k, streetwear, preppy, old money, boho, coquette, clean girl, dark academia, cottagecore, athleisure, normcore), each with aliases, key pieces, colours, details, what to avoid and a Wikipedia source (`data/vibes.csv`) | Hand-built. A themed request ("punk-themed rave") is looked up here, and all three outfits have to fit it. |
 | Weather | Forecast and multi-year normals | Open-Meteo, live, no key. `data/climate_fallback.csv` if it's down. |
 
 Rebuild the parquet: `uv run --extra build build/build.py`

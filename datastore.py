@@ -3,7 +3,8 @@
   Google Trends, interest over time   data/trends.parquet + data/verdicts.parquet (scored offline)
   Google Trends, top / rising queries data/rising.parquet
   The closet                          data/closet.csv (synthetic: 60 items, generated for this project)
-  Dress codes                         data/dress_codes.csv (hand-built, each row cites a guide)
+  Dress codes                         data/dress_codes.csv (hand-built, each row cites a guide or says it can't)
+  Vibes                               data/vibes.csv (15 aesthetics: key pieces, colours, details; cites Wikipedia)
   Weather                             Open-Meteo, live: a forecast if the date is close, else
                                       multi-year normals; data/climate_fallback.csv if offline
 
@@ -31,6 +32,7 @@ def db() -> duckdb.DuckDBPyConnection:
     for name in ("trends", "verdicts", "rising"):
         con.execute(f"CREATE VIEW {name} AS SELECT * FROM read_parquet('{(DATA / (name + '.parquet')).as_posix()}')")
     con.execute(f"CREATE VIEW closet AS SELECT * FROM read_csv_auto('{(DATA / 'closet.csv').as_posix()}', all_varchar=false)")
+    con.execute(f"CREATE VIEW vibes AS SELECT * FROM read_csv_auto('{(DATA / 'vibes.csv').as_posix()}')")
     con.execute(f"CREATE VIEW dress_codes AS SELECT * FROM read_csv_auto('{(DATA / 'dress_codes.csv').as_posix()}')")
     return con
 
@@ -99,7 +101,8 @@ def rising_categories() -> list[str]:
 
 
 def closet(category: str = "", max_warmth: int = 5, min_warmth: int = 0, min_formality: int = 0,
-           max_formality: int = 5, season: str = "", occasion: str = "", text: str = "") -> list[dict]:
+           max_formality: int = 5, season: str = "", occasion: str = "", text: str = "",
+           vibe: str = "") -> list[dict]:
     """Closet items matching every filter given. Each row carries trend_term when the item maps to
     a Google Trends term we track, plus that term's verdict."""
     return _rows(
@@ -110,11 +113,12 @@ def closet(category: str = "", max_warmth: int = 5, min_warmth: int = 0, min_for
           AND warmth BETWEEN ? AND ? AND formality BETWEEN ? AND ?
           AND (seasons ILIKE '%' || ? || '%' OR seasons = 'all')
           AND (occasions ILIKE '%' || ? || '%' OR occasions = 'all')
+          AND vibes ILIKE '%' || ? || '%'
           AND (item ILIKE '%' || ? || '%' OR fabric ILIKE '%' || ? || '%'
                OR colour ILIKE '%' || ? || '%' OR coalesce(trend_term, '') ILIKE '%' || ? || '%')
         ORDER BY id
         """,
-        [category, min_warmth, max_warmth, min_formality, max_formality, season, occasion,
+        [category, min_warmth, max_warmth, min_formality, max_formality, season, occasion, vibe,
          text, text, text, text],
     )
 
@@ -131,6 +135,25 @@ def closet_summary() -> dict:
     occ = _rows("SELECT unnest(string_split(occasions, '|')) AS occasion, count(*) AS n "
                 "FROM closet GROUP BY 1 ORDER BY 2 DESC")
     return {"items": sum(c["n"] for c in cats), "by_category": cats, "occasions": occ}
+
+
+# --- Vibes ---
+
+
+def vibe(name: str) -> dict | None:
+    """One aesthetic by name or alias, e.g. 'punk', 'riot grrrl', 'quiet luxury'."""
+    q = name.strip().lower()
+    for row in _rows("SELECT * FROM vibes"):
+        if q == row["vibe"] or q in row["aliases"].split("|"):
+            return row
+    for row in _rows("SELECT * FROM vibes"):  # looser: 'punk themed' -> punk
+        if row["vibe"] in q or any(a in q for a in row["aliases"].split("|")):
+            return row
+    return None
+
+
+def vibe_names() -> list[str]:
+    return [r["vibe"] for r in _rows("SELECT vibe FROM vibes ORDER BY vibe")]
 
 
 # --- Dress codes ---

@@ -1,61 +1,68 @@
-id,item,category,colour,fabric,warmth,formality,seasons,occasions,trend_term,price_paid_usd
-c01,white cotton baby tee,top,white,cotton jersey,1,1,spring|summer|fall,college|casual|weekend,crop top,8
-c02,black ribbed tank,top,black,cotton rib,1,1,summer,college|casual|night out,,6
-c03,oversized grey hoodie,top,heather grey,cotton fleece,3,1,fall|winter|spring,college|casual|travel,,25
-c04,light blue oxford button-down,top,light blue,cotton oxford,2,3,all,business casual|interview|college,,22
-c05,white silk-look blouse,top,ivory,polyester satin,1,3,spring|summer|fall,business casual|dinner|wedding guest,,28
-c06,black square-neck bodysuit,top,black,stretch jersey,1,2,all,night out|dinner|college,,15
-c07,cream cable-knit sweater,top,cream,acrylic wool blend,4,2,fall|winter,college|casual|date,,30
-c08,striped long-sleeve tee,top,navy/white,cotton,2,1,spring|fall,college|casual|weekend,,12
-c09,cropped black cardigan,top,black,viscose knit,2,2,spring|fall|winter,business casual|college|date,,18
-c10,pink linen camp shirt,top,blush pink,linen,1,2,summer,vacation|brunch|casual,,20
-c11,baggy light-wash jeans,bottom,light wash,denim,2,1,all,college|casual|weekend,wide leg jeans,35
-c12,black skinny jeans,bottom,black,stretch denim,2,1,all,casual|night out,skinny jeans,20
-c13,khaki cargo pants,bottom,khaki,cotton twill,2,1,spring|fall,college|casual|travel,,28
-c14,black wide-leg trousers,bottom,black,crepe,2,3,all,business casual|interview|dinner,,32
-c15,grey pleated trousers,bottom,charcoal,poly-wool blend,3,3,fall|winter,business casual|interview,,30
-c16,denim mini skirt,bottom,mid wash,denim,1,1,spring|summer,college|casual|night out,short skirt,18
-c17,black satin midi skirt,bottom,black,satin,1,3,all,dinner|wedding guest|business casual,,24
-c18,grey plaid mini skirt,bottom,grey plaid,wool blend,2,2,fall|winter,college|date|holiday party,,22
-c19,black bike shorts,bottom,black,spandex,1,0,summer,gym|casual,,10
-c20,white linen shorts,bottom,white,linen,1,1,summer,vacation|casual|brunch,,16
-c21,sage green slip dress,dress,sage,satin,1,4,spring|summer,wedding guest|cocktail|date,,38
-c22,floral midi sundress,dress,yellow floral,cotton voile,1,2,spring|summer,brunch|garden party|wedding guest,,30
-c23,little black dress,dress,black,crepe,1,4,all,cocktail|dinner|holiday party|wedding guest,mini dress,35
-c24,burgundy velvet midi dress,dress,burgundy,velvet,3,4,fall|winter,holiday party|cocktail|wedding guest,velvet dress,40
-c25,navy sheath dress,dress,navy,ponte knit,2,4,all,interview|business formal|business casual,,34
-c26,white eyelet mini dress,dress,white,cotton eyelet,1,2,summer,brunch|vacation|graduation,mini dress,26
-c27,long-sleeve black knit dress,dress,black,ribbed knit,3,2,fall|winter,college|date|dinner,,28
-c28,emerald satin maxi dress,dress,emerald,satin,1,5,spring|summer|fall,black tie|formal wedding|gala,,55
-c29,black oversized blazer,outerwear,black,poly blend,2,3,all,business casual|interview|night out,,40
-c30,camel trench coat,outerwear,camel,cotton gabardine,3,3,spring|fall,business casual|commute|dinner,trench coat,60
-c31,black faux-leather jacket,outerwear,black,faux leather,3,2,spring|fall,night out|college|date,leather jacket,45
-c32,light-wash jean jacket,outerwear,light wash,denim,2,1,spring|summer|fall,college|casual|brunch,jean jacket,30
-c33,black puffer coat,outerwear,black,nylon with down fill,5,1,winter,college|commute|casual,down jacket,70
-c34,cropped tweed jacket,outerwear,cream/black,tweed,3,3,fall|spring,business casual|dinner|date,cropped jacket,38
-c35,olive bomber jacket,outerwear,olive,nylon,3,1,fall|spring,college|casual,bomber jacket,32
-c36,grey quarter-zip pullover,outerwear,grey,cotton fleece,3,1,fall|winter,college|casual|travel,quarter-zipper,24
-c37,white low-top sneakers,shoes,white,canvas,1,1,all,college|casual|travel,converse,45
-c38,chunky running sneakers,shoes,grey/white,mesh,1,1,all,college|gym|travel,sneakers,60
-c39,black loafers,shoes,black,faux leather,2,3,all,business casual|interview|college,,30
-c40,nude block-heel sandals,shoes,nude,faux leather,1,4,spring|summer,wedding guest|cocktail|dinner,,28
-c41,black pointed-toe pumps,shoes,black,faux suede,1,4,all,interview|cocktail|business formal,,32
-c42,black combat boots,shoes,black,leather,3,1,fall|winter,college|casual|night out,doc martens,80
-c43,tan ankle boots,shoes,tan,faux suede,3,2,fall|winter,college|date|dinner,ankle boot,35
-c44,chestnut sheepskin boots,shoes,chestnut,sheepskin,5,0,winter,college|casual|travel,ugg,90
-c45,black platform sandals,shoes,black,synthetic,1,2,summer,night out|brunch|vacation,platform shoe,25
-c46,white foam clogs,shoes,white,rubber foam,1,0,summer,casual|errands,crocs,30
-c47,wheat work boots,shoes,wheat,nubuck,4,1,fall|winter,casual|outdoors,timberland,95
-c48,silver strappy heels,shoes,silver,metallic synthetic,1,5,all,black tie|formal wedding|holiday party,,35
-c49,brown leather belt,accessory,brown,leather,0,2,all,business casual|casual,,15
-c50,gold hoop earrings,accessory,gold,plated brass,0,3,all,all,,12
-c51,black canvas tote bag,accessory,black,canvas,0,1,all,college|commute|travel,,14
-c52,small black shoulder bag,accessory,black,faux leather,0,3,all,dinner|night out|business casual,,25
-c53,beaded clutch,accessory,champagne,beaded satin,0,5,all,wedding guest|black tie|cocktail,,22
-c54,sheer black tights,accessory,black,nylon,1,3,fall|winter,business casual|cocktail|holiday party,stockings,6
-c55,cream wool scarf,accessory,cream,acrylic,3,1,winter,college|commute,,12
-c56,straw sun hat,accessory,natural,straw,0,1,summer,vacation|garden party|beach,,18
-c57,tortoiseshell sunglasses,accessory,tortoise,acetate,0,1,spring|summer,vacation|brunch|casual,,15
-c58,pearl hair clip,accessory,ivory,plastic pearl,0,3,all,wedding guest|dinner|date,,7
-c59,navy linen blazer,outerwear,navy,linen,1,3,summer,business casual|wedding guest|dinner,,45
-c60,black wool coat,outerwear,black,wool blend,4,3,winter,business casual|dinner|holiday party,,85
+id,item,category,colour,fabric,warmth,formality,seasons,occasions,trend_term,price_paid_usd,vibes
+c01,white cotton baby tee,top,white,cotton jersey,1,1,spring|summer|fall,college|casual|weekend,crop top,8,y2k|normcore|streetwear|rave
+c02,black ribbed tank,top,black,cotton rib,1,1,summer,college|casual|night out|rave|concert,,6,punk|grunge|rave|clean girl|goth
+c03,oversized grey hoodie,top,heather grey,cotton fleece,3,1,fall|winter|spring,college|casual|travel,,25,streetwear|athleisure|grunge
+c04,light blue oxford button-down,top,light blue,cotton oxford,2,3,all,business casual|interview|college,,22,preppy|old money|dark academia
+c05,white silk-look blouse,top,ivory,polyester satin,1,3,spring|summer|fall,business casual|dinner|wedding guest,,28,old money|clean girl|coquette
+c06,black square-neck bodysuit,top,black,stretch jersey,1,2,all,night out|dinner|college|rave,,15,clean girl|rave|goth|punk
+c07,cream cable-knit sweater,top,cream,acrylic wool blend,4,2,fall|winter,college|casual|date,,30,preppy|dark academia|cottagecore|old money
+c08,striped long-sleeve tee,top,navy/white,cotton,2,1,spring|fall,college|casual|weekend,,12,normcore|preppy
+c09,cropped black cardigan,top,black,viscose knit,2,2,spring|fall|winter,business casual|college|date,,18,coquette|dark academia|clean girl
+c10,pink linen camp shirt,top,blush pink,linen,1,2,summer,vacation|brunch|casual,,20,boho|y2k
+c11,baggy light-wash jeans,bottom,light wash,denim,2,1,all,college|casual|weekend,wide leg jeans,35,y2k|streetwear|grunge|normcore
+c12,black skinny jeans,bottom,black,stretch denim,2,1,all,casual|night out|rave|concert,skinny jeans,20,punk|goth|rave
+c13,khaki cargo pants,bottom,khaki,cotton twill,2,1,spring|fall,college|casual|travel|rave|concert,,28,streetwear|rave|y2k
+c14,black wide-leg trousers,bottom,black,crepe,2,3,all,business casual|interview|dinner,,32,old money|clean girl
+c15,grey pleated trousers,bottom,charcoal,poly-wool blend,3,3,fall|winter,business casual|interview,,30,dark academia|old money|preppy
+c16,denim mini skirt,bottom,mid wash,denim,1,1,spring|summer,college|casual|night out|rave|concert,short skirt,18,y2k|punk|grunge
+c17,black satin midi skirt,bottom,black,satin,1,3,all,dinner|wedding guest|business casual,,24,old money|goth|clean girl
+c18,grey plaid mini skirt,bottom,grey plaid,wool blend,2,2,fall|winter,college|date|holiday party|concert|themed party,,22,punk|preppy|dark academia|grunge
+c19,black bike shorts,bottom,black,spandex,1,0,summer,gym|casual|rave,,10,athleisure|rave
+c20,white linen shorts,bottom,white,linen,1,1,summer,vacation|casual|brunch,,16,boho|old money
+c21,sage green slip dress,dress,sage,satin,1,4,spring|summer,wedding guest|cocktail|date,,38,coquette|grunge|clean girl
+c22,floral midi sundress,dress,yellow floral,cotton voile,1,2,spring|summer,brunch|garden party|wedding guest,,30,boho|cottagecore
+c23,little black dress,dress,black,crepe,1,4,all,cocktail|dinner|holiday party|wedding guest|night out|themed party,mini dress,35,goth|punk|clean girl
+c24,burgundy velvet midi dress,dress,burgundy,velvet,3,4,fall|winter,holiday party|cocktail|wedding guest,velvet dress,40,goth|dark academia|coquette
+c25,navy sheath dress,dress,navy,ponte knit,2,4,all,interview|business formal|business casual,,34,old money|clean girl
+c26,white eyelet mini dress,dress,white,cotton eyelet,1,2,summer,brunch|vacation|graduation,mini dress,26,coquette|cottagecore|y2k
+c27,long-sleeve black knit dress,dress,black,ribbed knit,3,2,fall|winter,college|date|dinner,,28,goth|grunge|clean girl
+c28,emerald satin maxi dress,dress,emerald,satin,1,5,spring|summer|fall,black tie|formal wedding|gala,,55,old money
+c29,black oversized blazer,outerwear,black,poly blend,2,3,all,business casual|interview|night out,,40,clean girl|old money|streetwear
+c30,camel trench coat,outerwear,camel,cotton gabardine,3,3,spring|fall,business casual|commute|dinner,trench coat,60,old money|dark academia|preppy
+c31,black faux-leather jacket,outerwear,black,faux leather,3,2,spring|fall,night out|college|date|rave|concert,leather jacket,45,punk|grunge|goth|rave
+c32,light-wash jean jacket,outerwear,light wash,denim,2,1,spring|summer|fall,college|casual|brunch,jean jacket,30,y2k|boho|grunge|normcore
+c33,black puffer coat,outerwear,black,nylon with down fill,5,1,winter,college|commute|casual,down jacket,70,streetwear|athleisure
+c34,cropped tweed jacket,outerwear,cream/black,tweed,3,3,fall|spring,business casual|dinner|date,cropped jacket,38,preppy|old money|dark academia
+c35,olive bomber jacket,outerwear,olive,nylon,3,1,fall|spring,college|casual,bomber jacket,32,streetwear|grunge|y2k
+c36,grey quarter-zip pullover,outerwear,grey,cotton fleece,3,1,fall|winter,college|casual|travel,quarter-zipper,24,athleisure|preppy|streetwear
+c37,white low-top sneakers,shoes,white,canvas,1,1,all,college|casual|travel,converse,45,normcore|streetwear|y2k|punk
+c38,chunky running sneakers,shoes,grey/white,mesh,1,1,all,college|gym|travel|rave|concert,sneakers,60,athleisure|streetwear|rave
+c39,black loafers,shoes,black,faux leather,2,3,all,business casual|interview|college,,30,preppy|dark academia|old money|clean girl
+c40,nude block-heel sandals,shoes,nude,faux leather,1,4,spring|summer,wedding guest|cocktail|dinner,,28,boho|clean girl
+c41,black pointed-toe pumps,shoes,black,faux suede,1,4,all,interview|cocktail|business formal,,32,old money|clean girl
+c42,black combat boots,shoes,black,leather,3,1,fall|winter,college|casual|night out|rave|concert,doc martens,80,punk|grunge|goth|rave
+c43,tan ankle boots,shoes,tan,faux suede,3,2,fall|winter,college|date|dinner,ankle boot,35,boho|dark academia|grunge
+c44,chestnut sheepskin boots,shoes,chestnut,sheepskin,5,0,winter,college|casual|travel,ugg,90,athleisure|streetwear
+c45,black platform sandals,shoes,black,synthetic,1,2,summer,night out|brunch|vacation|rave,platform shoe,25,y2k|rave|goth|punk
+c46,white foam clogs,shoes,white,rubber foam,1,0,summer,casual|errands,crocs,30,normcore
+c47,wheat work boots,shoes,wheat,nubuck,4,1,fall|winter,casual|outdoors,timberland,95,grunge|streetwear
+c48,silver strappy heels,shoes,silver,metallic synthetic,1,5,all,black tie|formal wedding|holiday party,,35,y2k|rave
+c49,brown leather belt,accessory,brown,leather,0,2,all,business casual|casual,,15,preppy|old money|boho
+c50,gold hoop earrings,accessory,gold,plated brass,0,3,all,all,,12,clean girl|y2k|old money
+c51,black canvas tote bag,accessory,black,canvas,0,1,all,college|commute|travel,,14,streetwear|normcore|grunge
+c52,small black shoulder bag,accessory,black,faux leather,0,3,all,dinner|night out|business casual,,25,clean girl|old money|y2k|goth
+c53,beaded clutch,accessory,champagne,beaded satin,0,5,all,wedding guest|black tie|cocktail,,22,old money|coquette
+c54,sheer black tights,accessory,black,nylon,1,3,fall|winter,business casual|cocktail|holiday party|night out|themed party,stockings,6,goth|punk|coquette|grunge
+c55,cream wool scarf,accessory,cream,acrylic,3,1,winter,college|commute,,12,dark academia|preppy
+c56,straw sun hat,accessory,natural,straw,0,1,summer,vacation|garden party|beach,,18,boho|cottagecore
+c57,tortoiseshell sunglasses,accessory,tortoise,acetate,0,1,spring|summer,vacation|brunch|casual,,15,y2k|old money|boho
+c58,pearl hair clip,accessory,ivory,plastic pearl,0,3,all,wedding guest|dinner|date,,7,coquette|cottagecore
+c59,navy linen blazer,outerwear,navy,linen,1,3,summer,business casual|wedding guest|dinner,,45,old money|preppy
+c60,black wool coat,outerwear,black,wool blend,4,3,winter,business casual|dinner|holiday party,,85,old money|dark academia|clean girl
+c61,black vintage band tee,top,black,cotton,1,1,all,concert|rave|casual|night out,,15,punk|grunge|rave|streetwear
+c62,black mesh long-sleeve top,top,black,mesh,1,2,all,rave|night out|concert,,14,goth|punk|rave|y2k
+c63,red tartan trousers,bottom,red tartan,cotton twill,2,1,fall|winter|spring,concert|themed party|casual,,30,punk|grunge
+c64,fishnet tights,accessory,black,nylon,0,1,all,rave|concert|night out|themed party,stockings,8,punk|goth|rave|grunge
+c65,studded black belt,accessory,black/silver,faux leather and metal,0,1,all,rave|concert|themed party|casual,,12,punk|goth|rave
+c66,silver chain necklace,accessory,silver,steel,0,2,all,rave|concert|night out|themed party,,10,punk|goth|rave|y2k
+c67,red plaid flannel shirt,top,red plaid,cotton flannel,3,1,fall|winter,concert|college|casual,,20,grunge|punk|streetwear

@@ -88,6 +88,7 @@
   .s-FADING, .s-SLOW { color: var(--fading); }
   .s-TOO_QUIET, .s-TOO_FEW, .s-NOT { color: var(--quiet); }
   .s-TASTE { color: var(--taste); }
+  .s-VIBE { color: #c2387a; }
   .big-stamp { position: absolute; top: 1rem; right: 1rem; font-size: .9rem; transform: rotate(8deg); opacity: .85; }
 
   /* ---------- printer log ---------- */
@@ -103,7 +104,7 @@
   #results { display: none; flex-direction: column; gap: 1.6rem; }
   #results.on { display: flex; }
   .headline { font-family: var(--serif); font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.15; }
-  .conditions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .conditions { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
   .receipts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; align-items: start; }
   .receipt { animation: print .9s cubic-bezier(.2,.8,.2,1) both; transform-origin: top; }
   .receipt:nth-child(2) { animation-delay: .25s; }
@@ -180,7 +181,7 @@
     <div class="about">
       <div><b>WHAT IT DOES</b>Ask what to wear (a summer wedding, college, business casual). It searches the closet below, checks the dress code, the weather and five years of Google searches, then prints three outfits. Every piece has a receipt.</div>
       <div><b>WHO IT'S FOR</b>Anyone standing in front of a full closet with nothing to wear, who'd rather re-wear than buy.</div>
-      <div><b>HOW TO READ IT</b><span class="stamp s-RISING">RISING</span> <span class="stamp s-STEADY">STEADY</span> <span class="stamp s-FADING">FADING</span> are scored from Google Trends. <span class="stamp s-WEATHER">WEATHER</span> and <span class="stamp s-DRESS">DRESS CODE</span> are their own receipts. <span class="stamp s-TASTE">TASTE</span> means the data didn't back it.</div>
+      <div><b>HOW TO READ IT</b><span class="stamp s-RISING">RISING</span> <span class="stamp s-STEADY">STEADY</span> <span class="stamp s-FADING">FADING</span> are scored from Google Trends. <span class="stamp s-WEATHER">WEATHER</span>, <span class="stamp s-DRESS">DRESS CODE</span> and <span class="stamp s-VIBE">VIBE</span> are their own receipts. <span class="stamp s-TASTE">TASTE</span> means the data didn't back it.</div>
     </div>
   </header>
 
@@ -208,7 +209,7 @@
   <section id="results"></section>
 
   <section>
-    <div class="section-title"><span>THE CLOSET · 60 ITEMS (SYNTHETIC, MADE FOR THIS DEMO)</span><span id="closet-note">scroll →</span></div>
+    <div class="section-title"><span>THE CLOSET · 67 ITEMS (SYNTHETIC, MADE FOR THIS DEMO)</span><span id="closet-note">scroll →</span></div>
     <div class="closet" id="closet"></div>
   </section>
 
@@ -236,6 +237,7 @@ const EXAMPLES = [
   "Business casual first day at an internship in Seattle on Dec 1",
   "Cocktail holiday party in Chicago on Dec 12",
   "Is velvet actually in this year?",
+  "Punk-themed rave in Bushwick this Saturday",
   "What should I wear?",
 ];
 $("chips").innerHTML = EXAMPLES.map((e) => `<button type="button" class="chip">${esc(e)}</button>`).join("");
@@ -375,6 +377,11 @@ function ask(text) {
   };
 }
 
+function srcLink(src) {
+  try { return `<a href="${esc(src)}" target="_blank" rel="noopener">${esc(new URL(src).hostname)}</a>`; }
+  catch { return esc(src); }
+}
+
 function render(e) {
   const r = e.report, ev = e.evidence || {};
   const w = ev.weather, dc = ev.dress_code;
@@ -389,7 +396,11 @@ function render(e) {
     <div class="paper"><div class="small">DRESS CODE</div>
       ${dc ? `<div style="font-family:var(--serif);font-size:1.8rem;text-transform:capitalize">${esc(dc.code)}</div>` : ""}
       <div style="font-size:.8rem">${esc(r.dress_code_line)}</div>
-      ${dc ? `<div class="small" style="margin-top:.3rem">source: <a href="${esc(dc.source)}" target="_blank" rel="noopener">${esc(new URL(dc.source).hostname)}</a></div>` : ""}</div>
+      ${dc ? `<div class="small" style="margin-top:.3rem">source: ${srcLink(dc.source)}</div>` : ""}</div>
+    ${(ev.vibes || []).length ? ev.vibes.map((v) => `<div class="paper"><div class="small">VIBE</div>
+      <div style="font-family:var(--serif);font-size:1.8rem;text-transform:capitalize">${esc(v.vibe)}</div>
+      <div style="font-size:.8rem">${esc(v.key_pieces)}</div>
+      <div class="small" style="margin-top:.3rem">${esc(v.colours)} · source: ${srcLink(v.source)}</div></div>`).join("") : ""}
   </div>`;
 
   if (r.outfits.length) {
