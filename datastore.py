@@ -184,7 +184,16 @@ def _geocode(place: str) -> dict | None:
 
 def weather(place: str, when: str) -> dict:
     """when is an ISO date (YYYY-MM-DD). Within 15 days: the live forecast for that day.
-    Further out: the average for that month over the last five years."""
+    Further out: the average for that month over the last five years. Fahrenheit is added to
+    every answer, since the page and the receipts show °F first."""
+    w = _weather(place, when)
+    for k in ("high", "low"):
+        if w.get(f"{k}_c") is not None:
+            w[f"{k}_f"] = round(w[f"{k}_c"] * 9 / 5 + 32)
+    return w
+
+
+def _weather(place: str, when: str) -> dict:
     try:
         day = date.fromisoformat(when)
     except ValueError:

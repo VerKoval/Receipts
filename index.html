@@ -390,7 +390,7 @@ function render(e) {
 
   html += `<div class="conditions">
     <div class="paper"><div class="small">WEATHER</div>
-      ${w ? `<div style="font-family:var(--serif);font-size:1.8rem">${Math.round(w.high_c)}° / ${Math.round(w.low_c)}°C <span class="small">${f(w.high_c)}° / ${f(w.low_c)}°F</span></div>` : ""}
+      ${w ? `<div style="font-family:var(--serif);font-size:1.8rem">${f(w.high_c)}° / ${f(w.low_c)}°F <span class="small">${Math.round(w.high_c)}° / ${Math.round(w.low_c)}°C</span></div>` : ""}
       <div style="font-size:.8rem">${esc(r.weather_line)}</div>
       ${w ? `<div class="small" style="margin-top:.3rem">${esc(w.place)} · ${esc(w.source)}</div>` : ""}</div>
     <div class="paper"><div class="small">DRESS CODE</div>

@@ -235,7 +235,8 @@ weather_scout = Agent(
 You find out what the weather will be so the outfit survives the day.
 
 1. Call weather with the place and date.
-2. Report at most 4 bullets: high and low in °C and °F, rain, and what that means for fabric,
+2. Report at most 4 bullets: high and low in °F first with °C in brackets (e.g. 61°F (16°C)),
+   rain, and what that means for fabric,
    layers and shoes. Copy the tool's "source" field word for word as your last bullet, so the
    reader knows if it is a live forecast, a multi-year average or the offline fallback. If the
    place was not found, say that.""",
@@ -363,7 +364,7 @@ class Outfit(BaseModel):
 
 class Report(BaseModel):
     headline: str = Field(description="one line summary of the answer")
-    weather_line: str = Field(description="the weather in one line with numbers and source, or 'not checked'")
+    weather_line: str = Field(description="the weather in one line, °F first (°C in brackets), with source, or 'not checked'")
     dress_code_line: str = Field(description="the dress code in one line, or 'n/a'")
     vibe_line: str = Field(description="the requested theme/vibe in one line with its key pieces, or 'none asked'")
     outfits: list[Outfit] = Field(description="exactly three outfits, unless the request was only about a trend")
@@ -393,6 +394,7 @@ three must differ from each other. Every item carries a stamp and a receipt. Rul
 - An item with no supporting finding gets stamp TASTE and receipt "my taste, not the data".
 - Weather and dress code can back items too (stamp WEATHER or DRESS CODE). Name the weather source
   exactly as the findings give it.
+- Temperatures in °F first, °C in brackets.
 - Plain words. No "elevate", "effortless", "timeless", "statement piece".
 - If the request was only about a trend, return outfits that show how to wear it (or none if it is busted).""",
     model=MODEL, model_settings=SETTINGS,
