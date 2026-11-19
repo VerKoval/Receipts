@@ -19,7 +19,7 @@ import duckdb
 import httpx
 
 DATA = Path(__file__).parent / "data"
-TIMEOUT = 8
+TIMEOUT = 20  # five years of dailies can take a few seconds
 
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December"]
@@ -99,7 +99,7 @@ def rising_categories() -> list[str]:
 
 
 def closet(category: str = "", max_warmth: int = 5, min_warmth: int = 0, min_formality: int = 0,
-           max_formality: int = 5, season: str = "", occasion: str = "") -> list[dict]:
+           max_formality: int = 5, season: str = "", occasion: str = "", text: str = "") -> list[dict]:
     """Closet items matching every filter given. Each row carries trend_term when the item maps to
     a Google Trends term we track, plus that term's verdict."""
     return _rows(
@@ -110,9 +110,12 @@ def closet(category: str = "", max_warmth: int = 5, min_warmth: int = 0, min_for
           AND warmth BETWEEN ? AND ? AND formality BETWEEN ? AND ?
           AND (seasons ILIKE '%' || ? || '%' OR seasons = 'all')
           AND (occasions ILIKE '%' || ? || '%' OR occasions = 'all')
+          AND (item ILIKE '%' || ? || '%' OR fabric ILIKE '%' || ? || '%'
+               OR colour ILIKE '%' || ? || '%' OR coalesce(trend_term, '') ILIKE '%' || ? || '%')
         ORDER BY id
         """,
-        [category, min_warmth, max_warmth, min_formality, max_formality, season, occasion],
+        [category, min_warmth, max_warmth, min_formality, max_formality, season, occasion,
+         text, text, text, text],
     )
 
 

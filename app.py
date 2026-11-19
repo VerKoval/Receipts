@@ -102,14 +102,15 @@ def rising_queries(query: str = "", category: str = "", kind: str = "rising") ->
 
 @function_tool
 def closet_overview() -> str:
-    """How many items of each category the closet holds and which occasions it covers. Use it to
-    spot gaps (e.g. nothing formal enough for black tie)."""
-    return json.dumps(ds.closet_summary())
+    """The whole closet in one list (it is only 60 items): id, item, category, formality, warmth,
+    seasons, occasions and trend verdict. Call this first."""
+    cols = ["id", "item", "category", "formality", "warmth", "seasons", "occasions", "trend_term", "trend_verdict"]
+    return json.dumps([{k: r[k] for k in cols if r.get(k) is not None} for r in ds.closet()])
 
 
 @function_tool
 def search_closet(category: str = "", occasion: str = "", season: str = "", min_formality: int = 0,
-                  max_formality: int = 5, min_warmth: int = 0, max_warmth: int = 5) -> str:
+                  max_formality: int = 5, min_warmth: int = 0, max_warmth: int = 5, text: str = "") -> str:
     """Closet items matching every filter you give. Formality and warmth run 0-5. Each item has an
     id (c01...), and a trend_term + trend_verdict when it maps to a tracked Google Trends term.
 
@@ -121,8 +122,9 @@ def search_closet(category: str = "", occasion: str = "", season: str = "", min_
         max_formality: highest formality.
         min_warmth: lowest warmth (0-5).
         max_warmth: highest warmth (0-5).
+        text: optional word matched against item name, fabric, colour and trend, e.g. 'velvet' or 'linen'.
     """
-    rows = ds.closet(category, max_warmth, min_warmth, min_formality, max_formality, season, occasion)
+    rows = ds.closet(category, max_warmth, min_warmth, min_formality, max_formality, season, occasion, text)
     return json.dumps(rows) if rows else "Nothing in the closet matches. Say so: that is a gap, not an error."
 
 
@@ -156,6 +158,8 @@ def dress_codes(ctx: RunContextWrapper[Run], code: str = "") -> str:
         match = [r for r in rows if code.lower() in r["code"].lower()]
         if match:
             ctx.context.evidence["dress_code"] = match[0]
+            # The Writer only reads findings, so the dress code goes there too.
+            ctx.context.findings.append("## Dress code: " + match[0]["code"] + "\n\n" + json.dumps(match[0]))
             return json.dumps(match)
     return json.dumps(rows)
 
@@ -185,9 +189,10 @@ closet_researcher = Agent(
 You find what in the user's closet works for one occasion. The closet is the only source of
 clothes: never invent an item.
 
-1. closet_overview once, then search_closet a few times: by occasion, and by category with the
-   formality range the dress code implies (casual 1-2, business casual 3, cocktail 4, black tie 5)
-   and the season.
+1. closet_overview: it lists every item. Read all of it. Use the formality the dress code
+   implies (casual 1-2, business casual 3, cocktail 4, black tie 5), the season and the warmth.
+   search_closet is there if you want to filter, but the list is the truth. If the request names
+   a garment, fabric or trend (e.g. velvet), find every item that matches by name or fabric.
 2. Report candidates grouped by category: id, item, formality, warmth, and trend_verdict if it has
    one. At most 4 per category, best first.
 3. End with GAPS: what the occasion needs that the closet does not have (e.g. no floor-length
@@ -203,8 +208,9 @@ You find out what the weather will be so the outfit survives the day.
 
 1. Call weather with the place and date.
 2. Report at most 4 bullets: high and low in °C and °F, rain, and what that means for fabric,
-   layers and shoes. Say whether it is a live forecast or a multi-year average, and say so if
-   it came from the offline fallback. If the place was not found, say that.""",
+   layers and shoes. Copy the tool's "source" field word for word as your last bullet, so the
+   reader knows if it is a live forecast, a multi-year average or the offline fallback. If the
+   place was not found, say that.""",
     model=RESEARCHER_MODEL, model_settings=SETTINGS,
     tools=[weather],
 )
@@ -276,10 +282,12 @@ Decide first whether you can act.
 - Do not ask about place or date when a season is named ("summer wedding") or the occasion is
   ongoing ("college", "business casual"): use that season, or the current one, and skip the
   weather check when there is no city.
-- A question about a trend alone ("is velvet in?") needs no place or date.
+- A question about a trend alone ("is velvet in?") needs no place or date, but still call
+  check_closet (occasion: "everyday, wearing <the trend>") so the answer uses pieces the user owns.
 
 Otherwise:
-1. Call dress_codes with the code that fits the occasion, tracked_trends, and rising_queries
+1. Call dress_codes with the one code that fits the occasion (always pass a code; a summer
+   wedding with no stated code is cocktail, college is casual), tracked_trends, and rising_queries
    (category womenswear or menswear if the request implies one) to see what is hot right now.
 2. In ONE turn, call in parallel: check_closet; check_weather if there is a city (date as
    YYYY-MM-DD; for a month or season alone use the 15th of the next such month); and check_trend
@@ -289,7 +297,8 @@ Otherwise:
    unverified), send at most one more round.
 4. Reply DONE and nothing else. A writer writes the answer.
 
-Pick at least one trend that might turn out FADING: a busted trend is a useful receipt too."""
+Only check trends a closet piece for THIS occasion maps to (e.g. no boots for a summer wedding).
+If one of them turns out FADING, that is a useful receipt too."""
 
 
 lead = Agent(
@@ -335,13 +344,16 @@ writer = Agent(
 You write the final answer from the research findings only. You never saw the tools.
 
 Give three outfits built ONLY from closet items in the findings, with their ids: a safe one, an
-on-trend one, and a wildcard. Every item carries a stamp and a receipt. Rules:
+on-trend one, and a wildcard. Each outfit is a full look of 3-5 pieces (shoes included), and the
+three must differ from each other. Every item carries a stamp and a receipt. Rules:
 - Copy verdict words exactly as the findings give them. Never upgrade TOO_QUIET, TOO_FEW or
   NOT TRACKED into a recommendation.
 - A piece whose trend is FADING goes in `busted`, never in the on-trend outfit.
-- Never invent a garment. If the closet lacks something the occasion needs, put it in `gaps`.
+- Never invent a garment. If the closet lacks something the occasion needs, put it in `gaps`,
+  but only when the findings show the closet was searched for it and nothing came back.
 - An item with no supporting finding gets stamp TASTE and receipt "my taste, not the data".
-- Weather and dress code can back items too (stamp WEATHER or DRESS CODE).
+- Weather and dress code can back items too (stamp WEATHER or DRESS CODE). Name the weather source
+  exactly as the findings give it.
 - Plain words. No "elevate", "effortless", "timeless", "statement piece".
 - If the request was only about a trend, return outfits that show how to wear it (or none if it is busted).""",
     model=MODEL, model_settings=SETTINGS,
@@ -372,6 +384,17 @@ async def style(request: str, hooks: PanelHooks) -> tuple[str, Report | None, Ru
     findings = "\n\n---\n\n".join(run.findings) or "No findings: the researchers returned nothing."
     result = await Runner.run(writer, f"Request: {request}\n\nFindings:\n\n{findings}", hooks=hooks)
     report: Report = result.final_output
+    # The Writer may only use real closet pieces. Drop any id that isn't in the closet and use the
+    # closet's own name for the rest, so a hallucinated garment can never reach the page.
+    for outfit in report.outfits:
+        kept = []
+        for item in outfit.items:
+            real = ds.closet_item(item.closet_id)
+            if real:
+                item.piece = real["item"]
+                kept.append(item)
+        outfit.items = kept
+    report.outfits = [o for o in report.outfits if o.items]
     return to_markdown(report), report, run
 
 
